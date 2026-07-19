@@ -1,0 +1,6 @@
+# The determinism goldens and the covenant document change only with Daniel's
+# sign-off, via the mint ceremony (never a normal PR — OR1). On this public repo
+# CODEOWNERS is enforceable once branch protection requires code-owner review
+# (SETUP.md, T9); the golden-guard CI step (gate.yml, §7.4) is the second layer.
+/goldens/            @creativeorc
+/docs/DETERMINISM.md @creativeorc

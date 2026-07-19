@@ -1,0 +1,18 @@
+[package]
+name = "gate-runner"
+version = "0.0.0"
+description = "POC 0 covenant-clean orchestration: seeds -> transcripts -> SHA-256 digests."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+world-kernel = { workspace = true }
+# sha2 completes the covenant-bound dependency universe (§4.4). SHA-256 is exact
+# regardless of implementation path, so its optional HW acceleration is a non-
+# issue on any target (Q7).
+sha2 = { workspace = true }

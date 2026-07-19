@@ -1,0 +1,3 @@
+# goldens/v0.json is minted here ONLY via the mint ceremony (mint-goldens.yml,
+# cell A, human-approved). Never created or edited by a normal PR (OR1). This
+# .gitkeep holds the directory until the first ceremony mint (T8).

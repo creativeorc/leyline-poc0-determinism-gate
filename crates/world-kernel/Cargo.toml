@@ -1,0 +1,18 @@
+[package]
+name = "world-kernel"
+version = "0.0.0"
+description = "POC 0 covenant-bound kernel: pure (seed, params) -> transcript bytes. libm only."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+# rlib for native + wasip1 (gate-cli); cdylib for wasm32-unknown-unknown is
+# produced by the separate gate-wasm crate, which re-exports this kernel.
+crate-type = ["rlib"]
+
+[dependencies]
+# The ENTIRE dependency universe for this covenant crate (§4.4). Adding anything
+# here requires sign-off (OR4).
+libm = { workspace = true }

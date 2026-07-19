@@ -1,0 +1,11 @@
+# Build
+/target
+
+# Transcript diagnostic dumps (raw bytes are for local diagnosis, not committed)
+/gate-out/
+*.bin
+
+# Harness scratch
+harness/**/hashes.json
+
+# NOTE: goldens/ IS committed. It is the golden source of truth. Do not ignore.

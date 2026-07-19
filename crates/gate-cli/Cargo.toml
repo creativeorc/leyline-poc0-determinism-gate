@@ -1,0 +1,17 @@
+[package]
+name = "gate-cli"
+version = "0.0.0"
+description = "POC 0 harness binary: native + wasm32-wasip1. Emits per-seed digests as JSON."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[[bin]]
+name = "gate-cli"
+path = "src/main.rs"
+
+[dependencies]
+gate-runner = { workspace = true }
+# Harness crate (not covenant-bound): ordinary deps are fine here (§3, OR4).
+# clap/serde_json for --json / --transcript-out land with T3.

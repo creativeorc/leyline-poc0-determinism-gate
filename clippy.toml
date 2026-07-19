@@ -1,0 +1,50 @@
+# Covenant enforcement (§9). This config is workspace-global; covenant-bound
+# crates (world-kernel, gate-runner) must be clean under it, and harness crates
+# (gate-cli, gate-wasm) are written to avoid the banned constructs too rather
+# than sprinkling #[allow] (OR2). Timings are captured OUTSIDE Rust (CI / Node),
+# so no std::time is needed anywhere here.
+#
+# Q1 (verify empirically via fixture F5): does clippy resolve bans on primitive
+# inherent methods like `f64::sin` and the bare type `f32`? Whatever it cannot
+# express falls back to the CI textual scan documented in DETERMINISM.md.
+
+disallowed-methods = [
+    # R2/R4 — transcendentals & unspecified float ops must go through libm,
+    # never the std inherent methods (which route to the platform libm).
+    { path = "f64::sin", reason = "R2: use libm::sin" },
+    { path = "f64::cos", reason = "R2: use libm::cos" },
+    { path = "f64::tan", reason = "R2: use libm::tan" },
+    { path = "f64::asin", reason = "R2: use libm::asin" },
+    { path = "f64::acos", reason = "R2: use libm::acos" },
+    { path = "f64::atan", reason = "R2: use libm::atan" },
+    { path = "f64::atan2", reason = "R2: use libm::atan2" },
+    { path = "f64::sinh", reason = "R2: use libm::sinh" },
+    { path = "f64::cosh", reason = "R2: use libm::cosh" },
+    { path = "f64::tanh", reason = "R2: use libm::tanh" },
+    { path = "f64::exp", reason = "R2: use libm::exp" },
+    { path = "f64::exp2", reason = "R2: use libm::exp2" },
+    { path = "f64::exp_m1", reason = "R2: use libm::expm1" },
+    { path = "f64::ln", reason = "R2: use libm::log" },
+    { path = "f64::ln_1p", reason = "R2: use libm::log1p" },
+    { path = "f64::log", reason = "R2: use libm::log/log2/log10" },
+    { path = "f64::log2", reason = "R2: use libm::log2" },
+    { path = "f64::log10", reason = "R2: use libm::log10" },
+    { path = "f64::powf", reason = "R2: use libm::pow" },
+    { path = "f64::powi", reason = "R4: unspecified expansion; loop or libm::pow" },
+    { path = "f64::min", reason = "R4: signed-zero order unspecified; use total_cmp" },
+    { path = "f64::max", reason = "R4: signed-zero order unspecified; use total_cmp" },
+    { path = "f64::rem_euclid", reason = "R4: use libm::fmod if needed" },
+    # R8 — no platform entropy / time / threads.
+    { path = "std::time::Instant::now", reason = "R8: no wall-clock in kernel" },
+    { path = "std::time::SystemTime::now", reason = "R8: no wall-clock in kernel" },
+    { path = "std::thread::spawn", reason = "R8/R10: single-threaded only" },
+]
+
+disallowed-types = [
+    # R8 — hash-randomized iteration order. Use BTreeMap/BTreeSet or Vec+sort.
+    { path = "std::collections::HashMap", reason = "R8: use BTreeMap or Vec+sort" },
+    { path = "std::collections::HashSet", reason = "R8: use BTreeSet or Vec+sort" },
+    # R1 — f32 ban. TODO(Q1): confirm clippy resolves the bare primitive; if not,
+    # this rule falls back to the CI textual scan (see DETERMINISM.md).
+    { path = "f32", reason = "R1: f64 only for identity-bearing math" },
+]

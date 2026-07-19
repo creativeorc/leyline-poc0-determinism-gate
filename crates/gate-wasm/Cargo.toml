@@ -1,0 +1,17 @@
+[package]
+name = "gate-wasm"
+version = "0.0.0"
+description = "POC 0 cdylib for wasm32-unknown-unknown: no bindgen, plain extern \"C\" exports for the Node/V8 harness."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+# cdylib for the Node/V8 harness (§4.5: no wasm-bindgen in POC 0). Also builds
+# as rlib on native so the workspace checks cleanly everywhere.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+gate-runner = { workspace = true }
+world-kernel = { workspace = true }

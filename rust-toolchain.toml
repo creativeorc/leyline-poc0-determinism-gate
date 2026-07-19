@@ -1,0 +1,8 @@
+# Pinned toolchain (R12). Bumping this is its own PR whose entire purpose is
+# re-running the gate (see DETERMINISM.md mint ceremony). Record the exact
+# version everywhere hashes.json metadata is written.
+[toolchain]
+channel = "1.93.1"
+components = ["rustfmt", "clippy"]
+targets = ["wasm32-unknown-unknown", "wasm32-wasip1"]
+profile = "minimal"
