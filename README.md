@@ -56,10 +56,14 @@ Makefile          `make gate` local loop
 - **T4** lint wall proven — fixture `fixtures/f5-lint/` + `expect-red.sh` show
   clippy rejects every banned construct. **Q1 answered: all bans resolve in
   clippy 1.93 (no textual-scan fallback).**
+- **T5** WASM cells — `gate-cli`→`wasm32-wasip1` under wasmtime, and
+  `gate-wasm`→`wasm32-unknown-unknown` under Node/V8 (`harness/node/run.mjs`,
+  zero imports). **Cross-target determinism proven: native + wasmtime + V8 give
+  bit-identical digests for all 10 seeds.** Q2/Q6/Q7 answered.
 
-Try it: `make run` (native digests as JSON), `make f5` (prove the lint wall bites).
-Next: **T5** — the WASM cells (wasmtime + Node/V8), first cross-target compare
-(Q2/Q6/Q7). See spec §13 for the T1→T9 sequence.
+Try it: `make run` (native), `make run-wasmtime`, `make run-node`, `make f5`.
+Next: **T6** — CI matrix (7 cells incl. ARM) + `compare.py` fan-in + weekly cron.
+See spec §13 for the T1→T9 sequence.
 
 ## Quick start
 

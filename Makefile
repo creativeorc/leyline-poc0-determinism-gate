@@ -26,6 +26,14 @@ wasm:
 	cargo build --release -p gate-cli --target wasm32-wasip1
 	cargo build --release -p gate-wasm --target wasm32-unknown-unknown
 
+# Run the wasip1 build under wasmtime (cell D). Needs wasmtime on PATH.
+run-wasmtime: wasm
+	wasmtime run target/wasm32-wasip1/release/gate-cli.wasm --json
+
+# Run the unknown-unknown build under Node/V8 (cell F). Needs node on PATH.
+run-node: wasm
+	node harness/node/run.mjs --toolchain "$$(rustc -V)"
+
 # F5 inverted check: covenant lints MUST reject the fixture (§8, AC4).
 f5:
 	bash fixtures/f5-lint/expect-red.sh

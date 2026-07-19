@@ -126,6 +126,25 @@ incident, not a fix.**
 
 ---
 
+## Cross-target results (evidence)
+
+**T5 — three cells, bit-identical.** All 10 canonical seeds produce identical
+SHA-256 digests across:
+
+| Cell | Target | Runtime | Host arch |
+|---|---|---|---|
+| A | `x86_64-unknown-linux-gnu` | native | x86_64 |
+| D | `wasm32-wasip1` | wasmtime 46.0.1 | x86_64 (wasm32) |
+| F | `wasm32-unknown-unknown` | Node 22.22.2 / V8 12.4 | x86_64 (wasm32) |
+
+Every libm transcendental, `mul_add`, subnormal, rounding mode, saturating cast,
+and the sort reproduce byte-for-byte across native and both WASM runtimes. Seed
+`0x0…0` → `5334a21cf46b7da4d20b5655c067301a8c30b016573e9264ddba39dc9428dcb8`.
+
+Remaining cells (B/C native ARM, E/G WASM-on-ARM) run in CI (T6); the ARM×WASM
+combination is the last unproven quadrant. *(These digests are dev evidence, not
+the golden — the authoritative `goldens/v0.json` is minted via the ceremony, T8.)*
+
 ## Questions the build must answer (Q1–Q8)
 
 Filled in as the corresponding task lands; until then, status is *open*.
@@ -133,12 +152,12 @@ Filled in as the corresponding task lands; until then, status is *open*.
 | Q | Question | Status / Answer |
 |---|----------|-----------------|
 | Q1 | Does clippy resolve bans on primitive inherent methods (`f64::sin`) and bare `f32`? | **answered (T4): YES, all of them.** Fixture F5 shows clippy 1.93 flags `f64::sin` + `std::time::Instant::now` (`disallowed_methods`), bare `f32` + `std::collections::HashMap` (`disallowed_types`), and integer `+` (`arithmetic_side_effects`). **No textual-scan fallback is needed.** |
-| Q2 | `wasm32-wasip1` vs `wasip2`? | **provisional: wasip1** (simplest module story under wasmtime). Re-verify against current rustc/wasmtime at T5; must not affect numerics. |
+| Q2 | `wasm32-wasip1` vs `wasip2`? | **answered (T5): wasip1.** `gate-cli` builds to `wasm32-wasip1` and runs under wasmtime 46.0.1 (`wasmtime run <wasm> --json`; no `--` separator — wasmtime forwards guest args directly). Digests match native bit-for-bit, so the choice does not affect numerics. |
 | Q3 | ARM runner availability? | **answered:** standalone public repo → free ARM Linux runners; cells B/E/G run as specified (`ubuntu-24.04-arm`), no fallback. |
 | Q4 | Toolchain pin. | **rustc 1.93.1** pinned in `rust-toolchain.toml`. wasmtime + Node pins recorded in CI at T6. |
 | Q5 | Debug/release parity. | **answered (T3):** `gate-cli --json` produces byte-identical seed digests in debug and release on cell A (x86_64-linux, rustc 1.93.1). R5 holds by construction; release-only is normative henceforth. |
-| Q6 | Zero-import instantiation of the std cdylib? | **open** — verified at T5; any panic/abort shims stubbed in `run.mjs` and proven unreachable on green runs. |
-| Q7 | `sha2` on wasm? | **open** — confirmed warning-free for both wasm targets at T5; trim features if needed. |
+| Q6 | Zero-import instantiation of the std cdylib? | **answered (T5): YES.** `WebAssembly.Module.imports(gate_wasm.wasm)` is `[]`; `run.mjs` instantiates with `{}`. Exports: `memory, alloc, run_gate, generator_version, seed_count`. No panic/abort shim surfaced — no stub needed. |
+| Q7 | `sha2` on wasm? | **answered (T5): YES.** `sha2` builds warning-free for both `wasm32-wasip1` and `wasm32-unknown-unknown` with default features; digests match native. No feature trimming needed. |
 | Q8 | `mul_add` lowering (fused ≠ unfused, both globally consistent)? | **open** — W6 probe 3 records observed bit patterns across all cells (T2/T6). |
 
 ---
