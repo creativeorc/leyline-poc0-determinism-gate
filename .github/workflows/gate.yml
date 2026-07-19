@@ -1,0 +1,141 @@
+name: gate
+
+# The determinism gate. Proves the kernel is bit-identical across every cell
+# (§7). Triggers include a weekly cron so the gate decays LOUDLY — runner-image,
+# toolchain-servicing, and runtime drift get caught while the repo is quiet.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 4 * * 1" # Mondays 04:17 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: gate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: lint (fmt + clippy -D warnings)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust toolchain (pinned by rust-toolchain.toml)
+        run: rustup show
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
+  cells:
+    name: cell ${{ matrix.cell }} (${{ matrix.target }} / ${{ matrix.kind }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { cell: A, runner: ubuntu-24.04,     kind: native,   target: x86_64-unknown-linux-gnu }
+          - { cell: B, runner: ubuntu-24.04-arm, kind: native,   target: aarch64-unknown-linux-gnu }
+          - { cell: C, runner: macos-15,         kind: native,   target: aarch64-apple-darwin }
+          - { cell: D, runner: ubuntu-24.04,     kind: wasmtime, target: wasm32-wasip1 }
+          - { cell: E, runner: ubuntu-24.04-arm, kind: wasmtime, target: wasm32-wasip1 }
+          - { cell: F, runner: ubuntu-24.04,     kind: node,     target: wasm32-unknown-unknown }
+          - { cell: G, runner: ubuntu-24.04-arm, kind: node,     target: wasm32-unknown-unknown }
+    runs-on: ${{ matrix.runner }}
+    env:
+      CELL: ${{ matrix.cell }}
+      WASMTIME_VERSION: "46.0.1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rust toolchain (pinned by rust-toolchain.toml)
+        run: rustup show
+
+      - name: Setup Node (cells F/G)
+        if: matrix.kind == 'node'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.11.0"
+
+      - name: Install wasmtime (cells D/E)
+        if: matrix.kind == 'wasmtime'
+        run: |
+          set -euo pipefail
+          arch=$(uname -m) # x86_64 | aarch64
+          dir="wasmtime-v${WASMTIME_VERSION}-${arch}-linux"
+          url="https://github.com/bytecodealliance/wasmtime/releases/download/v${WASMTIME_VERSION}/${dir}.tar.xz"
+          echo "downloading $url"
+          curl -sSfL "$url" -o wasmtime.tar.xz
+          tar xf wasmtime.tar.xz
+          echo "$PWD/${dir}" >> "$GITHUB_PATH"
+
+      - name: Run cell → hashes.json (+ metadata)
+        run: |
+          set -euo pipefail
+          case "${{ matrix.kind }}" in
+            native)
+              cargo build --release -p gate-cli --target ${{ matrix.target }}
+              ./target/${{ matrix.target }}/release/gate-cli --json \
+                --transcript-out tx --runtime-version "$(uname -sr)" > raw.json
+              ;;
+            wasmtime)
+              cargo build --release -p gate-cli --target ${{ matrix.target }}
+              wasmtime run target/${{ matrix.target }}/release/gate-cli.wasm \
+                --json --runtime-version "$(wasmtime --version)" > raw.json
+              ;;
+            node)
+              cargo build --release -p gate-wasm --target ${{ matrix.target }}
+              node harness/node/run.mjs --toolchain "$(rustc -V)" > raw.json
+              ;;
+          esac
+          python3 harness/ci/annotate.py < raw.json > hashes.json
+          cat hashes.json
+
+      - name: Upload hashes
+        uses: actions/upload-artifact@v4
+        with:
+          name: hashes-${{ matrix.cell }}
+          path: hashes.json
+
+      - name: Upload transcripts (native cells, for diagnosis)
+        if: matrix.kind == 'native'
+        uses: actions/upload-artifact@v4
+        with:
+          name: transcripts-${{ matrix.cell }}
+          path: tx/
+          if-no-files-found: ignore
+
+  fan-in:
+    name: fan-in (all cells must agree)
+    needs: cells
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: hashes-*
+          path: art
+      - name: Compare all cells (and golden if present)
+        run: |
+          set -euo pipefail
+          files=$(find art -name hashes.json | sort)
+          echo "cells under comparison:"; echo "$files"
+          golden=""
+          if [ -f goldens/v0.json ]; then
+            golden="--golden goldens/v0.json"
+          else
+            echo "no goldens/v0.json yet (minted via the ceremony in T8) — cross-cell only"
+          fi
+          python3 harness/compare/compare.py hashes $golden $files
+
+  red-path-f5:
+    name: red-path F5 (lint wall must bite)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust toolchain
+        run: rustup show
+      # Inverted: this MUST fail clippy. expect-red.sh exits 0 only when every
+      # covenant violation is caught (§8, AC4).
+      - run: bash fixtures/f5-lint/expect-red.sh

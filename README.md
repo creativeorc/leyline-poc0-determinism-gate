@@ -61,9 +61,14 @@ Makefile          `make gate` local loop
   zero imports). **Cross-target determinism proven: native + wasmtime + V8 give
   bit-identical digests for all 10 seeds.** Q2/Q6/Q7 answered.
 
-Try it: `make run` (native), `make run-wasmtime`, `make run-node`, `make f5`.
-Next: **T6** — CI matrix (7 cells incl. ARM) + `compare.py` fan-in + weekly cron.
-See spec §13 for the T1→T9 sequence.
+- **T6** CI gate — `.github/workflows/gate.yml`: 7-cell matrix (A–G incl. native
+  ARM + WASM-on-ARM via free public runners), `compare.py` fan-in with
+  first-divergence reporting, forensic metadata, weekly cron, and the F5
+  inverted job. `make gate` runs the local subset.
+
+Try it: `make gate` (local cross-check), `make run`, `make f5`.
+Next: **T7** — runtime red-paths F1–F4 (prove the gate goes red); **T8** — golden
+mint ceremony + guard + CODEOWNERS. See spec §13 for the T1→T9 sequence.
 
 ## Quick start
 

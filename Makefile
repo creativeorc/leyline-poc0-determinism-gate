@@ -38,9 +38,9 @@ run-node: wasm
 f5:
 	bash fixtures/f5-lint/expect-red.sh
 
-# TODO(T5–T6): gate = build + wasm + run native/Node/wasmtime + compare.py vs goldens
+# Local gate (§6.5): build + run local cells + compare.py cross-check.
 gate:
-	@echo "make gate: full local gate lands in T3–T6 (see docs/POC0-SPEC.md §6.5)."
+	bash harness/local-gate.sh
 
 clean:
 	cargo clean
