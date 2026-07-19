@@ -124,6 +124,14 @@ only):
 **Standing rule: a golden change without a version bump is definitionally an
 incident, not a fix.**
 
+**Status (T8): live.** `mint-goldens.yml` + `harness/ci/mint.py` mint
+`goldens/v0.json` from cell A with provenance; `harness/ci/mint-check.sh`
+enforces the version-bump rule on a re-mint; the `golden-guard` job
+(`harness/ci/golden-guard.sh`) blocks any out-of-ceremony golden change. First
+mint (seed `0x0…0` → `5334a21c…`) is in flight as a mint-ceremony PR pending
+code-owner approval; the gate's fan-in on that PR confirms all 7 cells agree with
+the new golden.
+
 ---
 
 ## Cross-target results (evidence)
@@ -188,6 +196,11 @@ Populated as each inverted path lands; CI run links added in T7.
   transcript writer; the R6 finiteness assert panics → nonzero exit → red cell.
   R6 is the only defense against WASM's NaN-payload nondeterminism. CI job
   `red-path-f234`.
+- **AC5 — golden tamper guard (T8, demonstrated in CI).** A PR editing
+  `goldens/` on a non-ceremony branch fails the `golden-guard` job with
+  `GUARD RED: goldens/** changed outside the mint ceremony`. Demonstrated on a
+  throwaway PR (closed unmerged); the mint-ceremony branch is allowed by the same
+  guard.
 - **F1 — platform-libm leak (T7).** Bin `f1` uses the std inherent float methods
   (`f64::sin` …) over a transcendental grid. **Observed pattern — three distinct
   digests, one per platform libm:**

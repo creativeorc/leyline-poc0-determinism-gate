@@ -71,9 +71,14 @@ Makefile          `make gate` local loop
   the gate **red**. F1 empirically diverges (glibc vs wasm libm), confirming the
   `libm`-only rule is load-bearing. CI jobs `red-path-f234` + `red-path-f1`.
 
+- **T8** golden ceremony + guard — `mint-goldens.yml` (workflow_dispatch, cell A,
+  provenance, opens a mint PR), `golden-guard` job blocks out-of-ceremony golden
+  changes (AC5 demonstrated in CI), CODEOWNERS on `goldens/`. First `goldens/v0.json`
+  minted via the ceremony (pending approval).
+
 Try it: `make gate`, `make f5`, `make red-paths`.
-Next: **T8** — golden mint ceremony + guard + CODEOWNERS; **T9** — SETUP.md + AC
-sweep. See spec §13 for the T1→T9 sequence.
+Next: **T9** — SETUP.md (branch-protection checklist) + AC1–AC11 sweep + handoff.
+See spec §13 for the T1→T9 sequence.
 
 ## Quick start
 
