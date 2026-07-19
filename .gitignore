@@ -4,6 +4,7 @@
 # build output and lockfiles (no deps -> nothing to pin).
 fixtures/*/target/
 fixtures/*/Cargo.lock
+fixtures/red-paths/f1.txt
 
 # Transcript diagnostic dumps (raw bytes are for local diagnosis, not committed)
 /gate-out/

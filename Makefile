@@ -5,7 +5,7 @@
 # Wired so far: build, run, lint, test, wasm, f5. Full `gate` (compare vs
 # goldens across all cells) lands with T5–T6.
 
-.PHONY: build run lint test wasm f5 gate clean
+.PHONY: build run lint test wasm f5 red-paths gate clean
 
 build:
 	cargo build --release
@@ -37,6 +37,10 @@ run-node: wasm
 # F5 inverted check: covenant lints MUST reject the fixture (§8, AC4).
 f5:
 	bash fixtures/f5-lint/expect-red.sh
+
+# Runtime red-paths F2/F3/F4 (F1 is cross-cell — see the gate.yml red-path-f1 job).
+red-paths:
+	bash fixtures/red-paths/expect-red.sh
 
 # Local gate (§6.5): build + run local cells + compare.py cross-check.
 gate:

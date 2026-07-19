@@ -176,6 +176,21 @@ Populated as each inverted path lands; CI run links added in T7.
   clippy -- -D warnings` fails *and* reports every one. All five are caught by
   clippy (see Q1). The fixture is excluded from the workspace so it never touches
   the real lint job (OR2). Runs as the `red-path-f5` job in `gate.yml`.
-- **F1–F4 (runtime red paths):** land in T7 — platform-libm leak, iteration-order
-  entropy, silent drift, domain escape — including F1's observed cross-target
-  divergence pattern.
+- **F2 — iteration-order entropy (T7).** `fixtures/red-paths/` bin `f2` builds a
+  `HashMap` 3× in one process and shows the iteration-order digests diverge —
+  exactly what the 3-repeat in-process self-check catches, turning the first cell
+  red before the fan-in. CI job `red-path-f234`.
+- **F3 — silent drift (T7).** Bin `f3` runs W1's arithmetic chain with one
+  denominator constant drifted (`2.0` → `2.0 + 1e-7`); the digest changes. So the
+  golden comparison catches an algorithm edit even when every cell agrees. (The
+  golden anchor itself is minted in T8.) CI job `red-path-f234`.
+- **F4 — domain escape (T7, AC6).** Bin `f4` feeds a NaN (`sqrt(-1)`) to the
+  transcript writer; the R6 finiteness assert panics → nonzero exit → red cell.
+  R6 is the only defense against WASM's NaN-payload nondeterminism. CI job
+  `red-path-f234`.
+- **F1 — platform-libm leak (T7).** Bin `f1` uses the std inherent float methods
+  (`f64::sin` …) over a transcendental grid. **Observed divergence:** native
+  glibc `d7051b29…` vs wasm libm (wasmtime) `195fd4d7…` differ — the std methods
+  route to the *platform* libm, so a leak would go red. The `red-path-f1` CI job
+  compares cells A (glibc), C (Apple), D (wasm) and asserts they diverge; if they
+  ever all agree it fails as a FINDING, not a pass (§8).

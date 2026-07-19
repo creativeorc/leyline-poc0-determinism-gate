@@ -1,0 +1,12 @@
+# F1–F4 runtime red-path fixtures (§8). Standalone package, EXCLUDED from the
+# workspace (../../Cargo.toml) — never linked into the real gate. Each binary
+# demonstrates one violation class so the gate's detection is itself under test.
+[package]
+name = "red-paths"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+world-kernel = { path = "../../crates/world-kernel" }
+sha2 = "0.10"

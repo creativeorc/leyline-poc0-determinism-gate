@@ -66,9 +66,14 @@ Makefile          `make gate` local loop
   first-divergence reporting, forensic metadata, weekly cron, and the F5
   inverted job. `make gate` runs the local subset.
 
-Try it: `make gate` (local cross-check), `make run`, `make f5`.
-Next: **T7** — runtime red-paths F1–F4 (prove the gate goes red); **T8** — golden
-mint ceremony + guard + CODEOWNERS. See spec §13 for the T1→T9 sequence.
+- **T7** red-paths proven — `fixtures/red-paths/` (F1 platform-libm leak,
+  F2 HashMap entropy, F3 silent drift, F4 NaN domain escape) each shown to turn
+  the gate **red**. F1 empirically diverges (glibc vs wasm libm), confirming the
+  `libm`-only rule is load-bearing. CI jobs `red-path-f234` + `red-path-f1`.
+
+Try it: `make gate`, `make f5`, `make red-paths`.
+Next: **T8** — golden mint ceremony + guard + CODEOWNERS; **T9** — SETUP.md + AC
+sweep. See spec §13 for the T1→T9 sequence.
 
 ## Quick start
 

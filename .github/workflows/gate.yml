@@ -139,3 +139,83 @@ jobs:
       # Inverted: this MUST fail clippy. expect-red.sh exits 0 only when every
       # covenant violation is caught (§8, AC4).
       - run: bash fixtures/f5-lint/expect-red.sh
+
+  red-path-f234:
+    name: red-path F2/F3/F4 (self-check, drift, R6 panic)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust toolchain
+        run: rustup show
+      # Inverted: each fixture MUST exhibit its red behavior (§8).
+      - run: bash fixtures/red-paths/expect-red.sh
+
+  red-path-f1:
+    name: red-path F1 build (${{ matrix.cell }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { cell: A, runner: ubuntu-24.04, kind: native,   target: x86_64-unknown-linux-gnu }
+          - { cell: C, runner: macos-15,     kind: native,   target: aarch64-apple-darwin }
+          - { cell: D, runner: ubuntu-24.04, kind: wasmtime, target: wasm32-wasip1 }
+    runs-on: ${{ matrix.runner }}
+    env:
+      WASMTIME_VERSION: "46.0.1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust toolchain
+        run: rustup show
+      - name: Install wasmtime (cell D)
+        if: matrix.kind == 'wasmtime'
+        run: |
+          set -euo pipefail
+          arch=$(uname -m)
+          dir="wasmtime-v${WASMTIME_VERSION}-${arch}-linux"
+          curl -sSfL "https://github.com/bytecodealliance/wasmtime/releases/download/v${WASMTIME_VERSION}/${dir}.tar.xz" -o wasmtime.tar.xz
+          tar xf wasmtime.tar.xz
+          echo "$PWD/${dir}" >> "$GITHUB_PATH"
+      - name: Build + run f1 (std libm) → digest
+        run: |
+          set -euo pipefail
+          cd fixtures/red-paths
+          cargo build --release --bin f1 --target ${{ matrix.target }}
+          case "${{ matrix.kind }}" in
+            native)   ./target/${{ matrix.target }}/release/f1 > f1.txt ;;
+            wasmtime) wasmtime run target/${{ matrix.target }}/release/f1.wasm > f1.txt ;;
+          esac
+          echo "cell ${{ matrix.cell }}: $(cat f1.txt)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: f1-${{ matrix.cell }}
+          path: fixtures/red-paths/f1.txt
+
+  red-path-f1-check:
+    name: red-path F1 (platform-libm leak must diverge)
+    needs: red-path-f1
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: f1-*
+          path: art
+      - name: Assert cells diverge (else FINDING, §8)
+        run: |
+          python3 - <<'PY'
+          import glob, os, sys
+          digs = {}
+          for p in glob.glob("art/f1-*/f1.txt"):
+              cell = os.path.basename(os.path.dirname(p)).replace("f1-", "")
+              digs[cell] = open(p).read().strip()
+          for c, d in sorted(digs.items()):
+              print(f"  cell {c}: {d}")
+          if len(digs) < 2:
+              print("only one cell present; cannot compare"); sys.exit(1)
+          distinct = set(digs.values())
+          if len(distinct) == 1:
+              print("FINDING: all cells agree — std libm matches across the fleet; "
+                    "F1 needs a sharper trigger (§8), not a pass.")
+              sys.exit(1)
+          print(f"F1 DEMONSTRATED: {len(distinct)} distinct digests across "
+                f"{len(digs)} cells — a platform-libm leak WOULD be caught.")
+          PY
