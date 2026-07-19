@@ -1,8 +1,11 @@
 # The Determinism Covenant
 
-**Status:** T1 draft (rules complete; empirical answers Q1–Q8 filled in as the
-build proceeds). Binds all identity-bearing code — today `world-kernel` and
-`gate-runner`; later, the real generation kernel.
+**Status: living document (POC 0 complete; Q1–Q8 answered).** This is the
+authoritative, evolving covenant — kept current as the regime changes. The
+as-issued build spec is frozen at `docs/POC0-SPEC.md`; where reality diverged
+from it, this doc and the spec's deviation notes record why. Binds all
+identity-bearing code — today `world-kernel` and `gate-runner`; later, the real
+generation kernel.
 
 The covenant is **executable** (OR5): every rule below maps to at least one of a
 lint that fires, a red-path fixture that fails, or a probe whose bytes are
@@ -49,7 +52,7 @@ to quietly weaken. Equality is **bitwise** — there are no tolerances.
 
 | # | Rule | Enforcement |
 |---|------|-------------|
-| R12 | **Pin everything.** Exact stable in `rust-toolchain.toml`; `Cargo.lock` committed; wasmtime + Node versions pinned in CI and recorded in every `hashes.json`. Any pin bump is its own PR whose purpose is re-running the gate. | `rust-toolchain.toml`, committed lock, CI pins, metadata |
+| R12 | **Pin everything.** Exact stable in `rust-toolchain.toml`; `Cargo.lock` committed; **wasmtime, Node, and Bun** versions pinned in CI and the actual runtime+engine version recorded in every `hashes.json` (e.g. `bun 1.3.14 jsc <webkit-rev>`). Any pin bump is its own PR whose purpose is re-running the gate. | `rust-toolchain.toml`, committed lock, CI pins, metadata |
 | R13 | **No fast-math, no relaxed SIMD, no target-feature games.** No `RUSTFLAGS` enabling `relaxed-simd`; `simd128` OFF for POC 0; no nightly features in covenant crates. | CI env review + no such flags in-repo |
 
 ---
@@ -110,6 +113,26 @@ so nothing real is exposed.
   review + the golden-guard step; the required-checks config is delivered in
   SETUP.md.
 
+### Graduation path to POC 2 (decide before the real kernel starts)
+
+The free-ARM-runner posture above is scoped to **this repo being public**. When
+the real generation kernel is built (POC 2) it belongs with the private `leyline`
+monorepo, and the ARM question returns. The covenant, the lints, the gate wiring
+(`gate.yml`, `mint-goldens.yml`, `harness/`, fixtures), and the golden ceremony
+must migrate *with* the kernel, not stay behind in this POC repo. Options, to be
+decided rather than discovered:
+
+1. **Keep the determinism gate in a public repo** the private kernel depends on —
+   preserves free ARM + browser-engine runners; requires the identity-bearing
+   crate boundary to be cleanly separable (it already is: `world-kernel` +
+   `gate-runner`). Likely the cleanest.
+2. **Pay for private ARM runners** — simplest topologically, ongoing cost.
+3. **macOS-ARM fallback** in a private repo — loses the `aarch64-linux` and
+   ARM-Bun/JSC cells (E/G/I); records the gap as the spec's §7.1 fallback did.
+
+This is a `leyline` PLAN item (§10–11), flagged here so it's a decision, not a
+surprise, when POC 2 begins.
+
 ---
 
 ## Golden mint ceremony (§7.5)
@@ -132,8 +155,8 @@ incident, not a fix.**
 enforces the version-bump rule on a re-mint; the `golden-guard` job
 (`harness/ci/golden-guard.sh`) blocks any out-of-ceremony golden change. First
 mint (seed `0x0…0` → `5334a21c…`) is in flight as a mint-ceremony PR pending
-code-owner approval; the gate's fan-in on that PR confirms all 7 cells agree with
-the new golden.
+code-owner approval; the gate's fan-in confirms all 9 cells agree with the golden
+(main reports `10 sources + golden agree`).
 
 ---
 
@@ -172,11 +195,11 @@ Filled in as the corresponding task lands; until then, status is *open*.
 | Q1 | Does clippy resolve bans on primitive inherent methods (`f64::sin`) and bare `f32`? | **answered (T4): YES, all of them.** Fixture F5 shows clippy 1.93 flags `f64::sin` + `std::time::Instant::now` (`disallowed_methods`), bare `f32` + `std::collections::HashMap` (`disallowed_types`), and integer `+` (`arithmetic_side_effects`). **No textual-scan fallback is needed.** |
 | Q2 | `wasm32-wasip1` vs `wasip2`? | **answered (T5): wasip1.** `gate-cli` builds to `wasm32-wasip1` and runs under wasmtime 46.0.1 (`wasmtime run <wasm> --json`; no `--` separator — wasmtime forwards guest args directly). Digests match native bit-for-bit, so the choice does not affect numerics. |
 | Q3 | ARM runner availability? | **answered:** standalone public repo → free ARM Linux runners; cells B/E/G run as specified (`ubuntu-24.04-arm`), no fallback. |
-| Q4 | Toolchain pin. | **answered:** rustc **1.93.1** (`rust-toolchain.toml`), wasmtime **46.0.1**, Node **22.11.0** — pinned in `gate.yml`; each `hashes.json` records the actual runtime version too. |
+| Q4 | Toolchain pin. | **answered:** rustc **1.93.1** (`rust-toolchain.toml`), wasmtime **46.0.1**, Node **22.11.0**, Bun **1.3.14** — pinned in `gate.yml`; each `hashes.json` records the actual runtime+engine version too (incl. the JSC/WebKit revision for the Bun cells). |
 | Q5 | Debug/release parity. | **answered (T3):** `gate-cli --json` produces byte-identical seed digests in debug and release on cell A (x86_64-linux, rustc 1.93.1). R5 holds by construction; release-only is normative henceforth. |
 | Q6 | Zero-import instantiation of the std cdylib? | **answered (T5): YES.** `WebAssembly.Module.imports(gate_wasm.wasm)` is `[]`; `run.mjs` instantiates with `{}`. Exports: `memory, alloc, run_gate, generator_version, seed_count`. No panic/abort shim surfaced — no stub needed. |
 | Q7 | `sha2` on wasm? | **answered (T5): YES.** `sha2` builds warning-free for both `wasm32-wasip1` and `wasm32-unknown-unknown` with default features; digests match native. No feature trimming needed. |
-| Q8 | `mul_add` lowering (fused ≠ unfused, both globally consistent)? | **answered (T9):** `0.1.mul_add(10.0, -1.0)` = `0x3c90000000000000` (5.55e-17, fused); `0.1*10.0 - 1.0` = `0x0000000000000000` (0.0, unfused). They differ, and both are identical across all 7 cells (the fan-in agrees on the full transcript). `mul_add` is a correctly-rounded fused op everywhere — safe to use. |
+| Q8 | `mul_add` lowering (fused ≠ unfused, both globally consistent)? | **answered (T9):** `0.1.mul_add(10.0, -1.0)` = `0x3c90000000000000` (5.55e-17, fused); `0.1*10.0 - 1.0` = `0x0000000000000000` (0.0, unfused). They differ, and both are identical across all 9 cells (the fan-in agrees on the full transcript). `mul_add` is a correctly-rounded fused op everywhere — safe to use. (Fused value is exactly 2⁻⁵⁴.) |
 
 ---
 

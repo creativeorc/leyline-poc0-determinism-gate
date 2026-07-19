@@ -10,17 +10,17 @@ Key runs:
 
 | AC | Requirement | Status | Evidence |
 |---|---|---|---|
-| **AC1** | Cross-cell equality; 3-repeat in-process self-check per cell; two consecutive full-workflow runs | ✅ | `fan-in` reports all cells + golden agree on all 10 seeds across cells **A–I** (native x86_64/ARM64, wasmtime, V8, and **JSC via Bun** on x86_64+ARM64), on every push to `main`. `run_all(3)` self-check runs in every cell. |
+| **AC1** | Cross-cell equality; 3-repeat in-process self-check per cell; two consecutive full-workflow runs | ✅ | `fan-in` reports all cells + golden agree on all 10 seeds across cells **A–I** (native x86_64/ARM64, wasmtime, V8, and **JSC via Bun** on x86_64+ARM64). Green on consecutive `main` pushes (runs 29674433247, 29675004026) and the **weekly cron** (`gate.yml` `cron: 17 4 * * 1`). `run_all(3)` self-check runs in every cell. |
 | **AC2** | Golden match with provenance; goldens minted only via the ceremony | ✅ | `goldens/v0.json` minted from cell A via `mint-goldens.yml` (commit `9955b20`), records `minted_from`/`toolchain`/`date`/`commit`. Main fan-in: `8 sources + golden agree`. |
 | **AC3** | F1–F4 turn the gate red; F1 divergence pattern recorded | ✅ | `red-path-f234` + `red-path-f1` (run 29673743586). F1 three-way divergence (glibc/Apple/wasm) recorded in `DETERMINISM.md`. |
 | **AC4** | Lints bite (F5); covenant crates clean under `-D warnings` | ✅ | `red-path-f5` green (inverted); `lint` job green. Q1: all bans resolve in clippy — no textual-scan fallback. |
 | **AC5** | A PR editing goldens without a version bump fails the guard | ✅ | Tamper PR #2: `golden-guard` failed (`GUARD RED: goldens/** changed outside the mint ceremony`); closed unmerged. |
 | **AC6** | Finiteness boundary — NaN → panic → red cell | ✅ | F4 (`red-path-f234`): `sqrt(-1)` → R6 assert panics, nonzero exit. R6 is the only defense against WASM NaN-payload nondeterminism. |
-| **AC7** | Local reproduction — `make gate` reproduces the golden digests | ✅ | `make gate` (native + Node + wasmtime) → `OK … agree`; seed0 `5334a21c…` matches the golden and coreutils `sha256sum`. |
+| **AC7** | Local reproduction — `make gate` reproduces the golden digests | ✅ | `make gate` (native + Node + wasmtime) anchors against `goldens/v0.json` → `OK: 4 sources + golden agree on all 10 seeds`; seed0 `5334a21c…` matches the golden and coreutils `sha256sum`. |
 | **AC8** | Docs exist and match reality | ✅ | `DETERMINISM.md` (covenant R1–R13, non-promises, mint ceremony, Q1–Q8 answered, red-path evidence + run links), `SETUP.md`, `docs/POC0-SPEC.md`, this file. |
 | **AC9** | Required checks configured | ⏳ delivered | `SETUP.md` has the exact branch-protection + required-checks checklist. Flipping it is a one-time admin step (free on this public repo); AC9's documented alternative is satisfied. |
 | **AC10** | Debug/release parity recorded (Q5) | ✅ | Q5 in `DETERMINISM.md`: debug and release digests byte-identical on cell A; release-only normative. |
-| **AC11** | Forensic metadata on every `hashes.json` | ✅ | Each records `generator_version`, `target`, `runtime`, `toolchain`, `runtime_version`, `host_arch`, `cell`, `timestamp` (`harness/ci/annotate.py`, §7.3). |
+| **AC11** | Forensic metadata on every `hashes.json` | ✅ | Spot-checked cell I (run 29675004026): fields `generator_version, target, runtime, toolchain, runtime_version, host_arch, repeats, seeds, cell, timestamp`; `runtime_version = "bun 1.3.14 jsc 5488984d…"` (engine revision recorded). `harness/ci/annotate.py`, §7.3. |
 
 ## Questions Q1–Q8
 

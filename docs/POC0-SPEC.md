@@ -1,5 +1,15 @@
 # POC 0 — The Determinism Gate: Build Specification
 
+> **FROZEN — as-issued.** This is the original build spec, kept unchanged as the
+> historical record. The **living** covenant is `docs/DETERMINISM.md`; where the
+> build diverged from this spec, the deviation notes below and that doc record
+> why. Deviations recorded so far:
+> - Standalone **public** repo (not a new repo per Daniel's later choice) — §3 note.
+> - CI matrix **extended from 7 cells (A–G) to 9 (A–I)**: added Bun cells H/I that
+>   run the wasm under JavaScriptCore/WebKit (the iPad's WKWebView engine),
+>   converting §4.5's temporary JSC non-promise into CI evidence. Where this spec
+>   says "7 cells" / "seven cells" (e.g. §7.1, §7.5, AC1), read "9 (A–I)".
+
 **Project:** Fantasy World GIS · **Doc status:** Ready for implementation · **Audience:** coding agent team
 **Owner / approver:** Daniel · **Upstream context:** Product & Technical Plan §3.3, §4 ("Determinism gate — hard prerequisite"), §9 (POC ladder)
 **Estimated effort:** 3–5 focused days
