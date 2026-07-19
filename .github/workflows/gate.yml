@@ -29,6 +29,18 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
 
+  golden-guard:
+    name: golden guard (goldens change only via ceremony)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # RED if goldens/** changed on any non-ceremony branch (§7.4, OR1). This is
+      # the mechanical belt behind CODEOWNERS.
+      - run: bash harness/ci/golden-guard.sh "origin/${{ github.base_ref }}" "${{ github.head_ref }}"
+
   cells:
     name: cell ${{ matrix.cell }} (${{ matrix.target }} / ${{ matrix.kind }})
     strategy:

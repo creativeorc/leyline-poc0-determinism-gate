@@ -1,0 +1,73 @@
+name: mint-goldens
+
+# Golden mint ceremony (§7.5). workflow_dispatch ONLY — normal CI has no write
+# path to goldens/. Runs cell A, mints goldens/v<gen>.json with provenance,
+# enforces the version-bump rule on a re-mint, and pushes a mint branch. A human
+# then opens the PR and a CODE OWNER approves it (OR1): that approval is the gate.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mint-goldens
+  cancel-in-progress: false
+
+jobs:
+  mint:
+    name: mint goldens (cell A)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Rust toolchain (pinned by rust-toolchain.toml)
+        run: rustup show
+
+      - name: Mint goldens from cell A
+        id: mint
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          cargo build --release -p gate-cli --target x86_64-unknown-linux-gnu
+          ./target/x86_64-unknown-linux-gnu/release/gate-cli --json \
+            --runtime-version "$(uname -sr)" > raw.json
+          gen=$(python3 -c 'import json,sys;print(json.load(open("raw.json"))["generator_version"])')
+          echo "gen=$gen" >> "$GITHUB_OUTPUT"
+          mkdir -p goldens
+          python3 harness/ci/mint.py < raw.json > "goldens/v${gen}.json"
+          echo "----- goldens/v${gen}.json -----"
+          cat "goldens/v${gen}.json"
+
+      - name: Enforce version-bump on re-mint
+        run: bash harness/ci/mint-check.sh "${{ steps.mint.outputs.gen }}"
+
+      - name: Push mint branch
+        env:
+          GEN: ${{ steps.mint.outputs.gen }}
+        run: |
+          set -euo pipefail
+          branch="mint/goldens-v${GEN}"
+          git config user.name "leyline-gate[bot]"
+          git config user.email "leyline-gate@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add "goldens/v${GEN}.json"
+          git commit -m "Mint goldens v${GEN} (ceremony, cell A)"
+          git push -f origin "$branch"
+          {
+            echo "## Golden mint ceremony"
+            echo "Pushed branch \`$branch\` with a freshly-minted \`goldens/v${GEN}.json\`."
+            echo ""
+            echo "Next (human): open a PR from \`$branch\` to \`main\` and have a code owner"
+            echo "approve it. The golden-guard allows this branch; the gate re-runs and every"
+            echo "cell must agree with the new golden. A golden change without a"
+            echo "GENERATOR_VERSION bump is an incident, not a fix (§7.5)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: goldens-v${{ steps.mint.outputs.gen }}
+          path: goldens/v${{ steps.mint.outputs.gen }}.json
