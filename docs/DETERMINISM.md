@@ -189,8 +189,13 @@ Populated as each inverted path lands; CI run links added in T7.
   R6 is the only defense against WASM's NaN-payload nondeterminism. CI job
   `red-path-f234`.
 - **F1 — platform-libm leak (T7).** Bin `f1` uses the std inherent float methods
-  (`f64::sin` …) over a transcendental grid. **Observed divergence:** native
-  glibc `d7051b29…` vs wasm libm (wasmtime) `195fd4d7…` differ — the std methods
-  route to the *platform* libm, so a leak would go red. The `red-path-f1` CI job
-  compares cells A (glibc), C (Apple), D (wasm) and asserts they diverge; if they
-  ever all agree it fails as a FINDING, not a pass (§8).
+  (`f64::sin` …) over a transcendental grid. **Observed pattern — three distinct
+  digests, one per platform libm:**
+  - A glibc (x86 Linux): `d7051b29103822421e08efeedad45e87e8d33d3bc046948c04c96d44c74a92a3`
+  - C Apple (macOS ARM): `b221167c8b1272bef9670e8259c179434e909d6e27925aada10658e1452f1cc0`
+  - D wasm (wasmtime):    `195fd4d752fe3f49651c4084f2c87d45e112c83db29a9a6fa17dfc5baf41c309`
+
+  All three differ, so an accidental std-method leak in the kernel would turn the
+  fan-in red. This is exactly why R2 mandates the `libm` crate. The `red-path-f1`
+  CI job asserts divergence; all-agree would fail as a FINDING, not a pass (§8).
+  Run: <https://github.com/creativeorc/leyline-poc0-determinism-gate/actions/runs/29673743586>.
