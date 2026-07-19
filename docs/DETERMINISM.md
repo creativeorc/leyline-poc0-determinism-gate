@@ -128,22 +128,27 @@ incident, not a fix.**
 
 ## Cross-target results (evidence)
 
-**T5 — three cells, bit-identical.** All 10 canonical seeds produce identical
-SHA-256 digests across:
+**T6 — all 7 cells bit-identical, in CI.** The `gate.yml` fan-in reports
+`OK: 7 sources agree on all 10 seeds` across the full fleet:
 
 | Cell | Target | Runtime | Host arch |
 |---|---|---|---|
 | A | `x86_64-unknown-linux-gnu` | native | x86_64 |
-| D | `wasm32-wasip1` | wasmtime 46.0.1 | x86_64 (wasm32) |
-| F | `wasm32-unknown-unknown` | Node 22.22.2 / V8 12.4 | x86_64 (wasm32) |
+| B | `aarch64-unknown-linux-gnu` | native | ARM64 |
+| C | `aarch64-apple-darwin` | native | ARM64 (macOS) |
+| D | `wasm32-wasip1` | wasmtime 46.0.1 | x86_64 |
+| E | `wasm32-wasip1` | wasmtime 46.0.1 | ARM64 |
+| F | `wasm32-unknown-unknown` | Node 22 / V8 12.4 | x86_64 |
+| G | `wasm32-unknown-unknown` | Node 22 / V8 12.4 | ARM64 |
 
 Every libm transcendental, `mul_add`, subnormal, rounding mode, saturating cast,
-and the sort reproduce byte-for-byte across native and both WASM runtimes. Seed
-`0x0…0` → `5334a21cf46b7da4d20b5655c067301a8c30b016573e9264ddba39dc9428dcb8`.
+and the sort reproduce byte-for-byte across x86_64 **and** ARM64, native **and**
+both WASM runtimes — the ARM×WASM quadrant included. Seed `0x0…0` →
+`5334a21cf46b7da4d20b5655c067301a8c30b016573e9264ddba39dc9428dcb8`.
 
-Remaining cells (B/C native ARM, E/G WASM-on-ARM) run in CI (T6); the ARM×WASM
-combination is the last unproven quadrant. *(These digests are dev evidence, not
-the golden — the authoritative `goldens/v0.json` is minted via the ceremony, T8.)*
+First green run: <https://github.com/creativeorc/leyline-poc0-determinism-gate/actions/runs/29673296970>.
+*(These digests are dev/CI evidence, not the golden — the authoritative
+`goldens/v0.json` is minted via the ceremony, T8, which anchors this exact set.)*
 
 ## Questions the build must answer (Q1–Q8)
 
@@ -166,11 +171,11 @@ Filled in as the corresponding task lands; until then, status is *open*.
 
 Populated as each inverted path lands; CI run links added in T7.
 
-- **F5 — lint enforcement (T4, proven locally).** `fixtures/f5-lint/` uses each
-  banned construct; `fixtures/f5-lint/expect-red.sh` asserts `cargo clippy
-  -- -D warnings` fails *and* reports every one. All five are caught by clippy
-  (see Q1). The fixture is excluded from the workspace so it never touches the
-  real lint job (OR2). CI wires this as an inverted job in T7.
+- **F5 — lint enforcement (T4; inverted CI job green since T6).** `fixtures/f5-lint/`
+  uses each banned construct; `fixtures/f5-lint/expect-red.sh` asserts `cargo
+  clippy -- -D warnings` fails *and* reports every one. All five are caught by
+  clippy (see Q1). The fixture is excluded from the workspace so it never touches
+  the real lint job (OR2). Runs as the `red-path-f5` job in `gate.yml`.
 - **F1–F4 (runtime red paths):** land in T7 — platform-libm leak, iteration-order
   entropy, silent drift, domain escape — including F1's observed cross-target
   divergence pattern.
