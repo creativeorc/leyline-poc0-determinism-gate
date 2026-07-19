@@ -136,7 +136,7 @@ Filled in as the corresponding task lands; until then, status is *open*.
 | Q2 | `wasm32-wasip1` vs `wasip2`? | **provisional: wasip1** (simplest module story under wasmtime). Re-verify against current rustc/wasmtime at T5; must not affect numerics. |
 | Q3 | ARM runner availability? | **answered:** standalone public repo → free ARM Linux runners; cells B/E/G run as specified (`ubuntu-24.04-arm`), no fallback. |
 | Q4 | Toolchain pin. | **rustc 1.93.1** pinned in `rust-toolchain.toml`. wasmtime + Node pins recorded in CI at T6. |
-| Q5 | Debug/release parity. | **open** — one-time check at T3/T5 (R5 makes it true by construction; verify anyway). |
+| Q5 | Debug/release parity. | **answered (T3):** `gate-cli --json` produces byte-identical seed digests in debug and release on cell A (x86_64-linux, rustc 1.93.1). R5 holds by construction; release-only is normative henceforth. |
 | Q6 | Zero-import instantiation of the std cdylib? | **open** — verified at T5; any panic/abort shims stubbed in `run.mjs` and proven unreachable on green runs. |
 | Q7 | `sha2` on wasm? | **open** — confirmed warning-free for both wasm targets at T5; trim features if needed. |
 | Q8 | `mul_add` lowering (fused ≠ unfused, both globally consistent)? | **open** — W6 probe 3 records observed bit patterns across all cells (T2/T6). |

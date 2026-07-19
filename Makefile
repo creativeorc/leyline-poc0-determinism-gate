@@ -4,10 +4,15 @@
 #
 # T1: only `build` and `lint` are wired. `run`/`gate` fill in across T3–T6.
 
-.PHONY: build lint test wasm gate clean
+.PHONY: build run lint test wasm gate clean
 
 build:
 	cargo build --release
+
+# Native digests as JSON (the informal dev reference; formal goldens are minted
+# via the ceremony, not here).
+run:
+	cargo run --release -p gate-cli -- --json
 
 lint:
 	cargo clippy --workspace --all-targets -- -D warnings

@@ -46,10 +46,17 @@ Makefile          `make gate` local loop
 
 ## Status
 
-**T1 (skeleton) complete:** workspace, toolchain pin, covenant lints, crate homes,
-covenant docs, spec checked in. Native build + clippy green.
-Next: **T2** — SplitMix64 (with cross-checked KATs), workloads W1–W6, and the
-canonical transcript writer. See spec §13 for the T1→T9 sequence.
+**T1–T3 complete** (native gate works end to end):
+- **T1** skeleton — workspace, toolchain pin, covenant lints, crate homes, docs.
+- **T2** kernel — SplitMix64 (KATs vs an independent oracle), workloads W1–W6,
+  canonical transcript writer with R6 finiteness asserts.
+- **T3** native harness — `gate-runner` SHA-256 digests + 3-repeat self-check;
+  `gate-cli --json` / `--transcript-out`. Q5 debug/release byte-parity confirmed;
+  gate SHA-256 cross-checks against coreutils `sha256sum`.
+
+Try it: `make run` (native per-seed digests as JSON).
+Next: **T4** — covenant lints proven by fixture F5 (Q1); then **T5** WASM cells.
+See spec §13 for the T1→T9 sequence.
 
 ## Quick start
 
