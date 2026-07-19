@@ -81,9 +81,12 @@ covenant crate requires sign-off (OR4).
   across version bumps — that is the pin-per-world mechanism's job. **Nobody,
   human or agent, ever "repairs" an intentional-change mismatch by editing
   goldens outside the ceremony.**
-- **Non-promise (temporary) — JavaScriptCore.** Safari/iPad's JSC is a known,
-  accepted coverage gap until the physical-iPad work in POC 1. Node's V8 is the
-  engine proxy for Chrome/Edge here.
+- **JavaScriptCore — now covered (was a temporary non-promise).** The iPad's
+  WKWebView ships JSC (WebKit), not V8. Cells **H/I** run the wasm module under
+  **Bun** (whose engine is JavaScriptCore) on x86_64 and ARM64; cell I (JSC on
+  ARM64) is the closest CI proxy to the physical iPad. JSC digests match native/
+  V8/wasmtime bit-for-bit. The physical-device run (POC 1) remains the final
+  confirmation, but the engine itself is no longer untested.
 
 ---
 
@@ -136,8 +139,8 @@ the new golden.
 
 ## Cross-target results (evidence)
 
-**T6 — all 7 cells bit-identical, in CI.** The `gate.yml` fan-in reports
-`OK: 7 sources agree on all 10 seeds` across the full fleet:
+**All 9 cells bit-identical, in CI** (T6: 7 cells; T9+: +JSC). The `gate.yml`
+fan-in reports agreement across the full fleet:
 
 | Cell | Target | Runtime | Host arch |
 |---|---|---|---|
@@ -148,10 +151,12 @@ the new golden.
 | E | `wasm32-wasip1` | wasmtime 46.0.1 | ARM64 |
 | F | `wasm32-unknown-unknown` | Node 22 / V8 12.4 | x86_64 |
 | G | `wasm32-unknown-unknown` | Node 22 / V8 12.4 | ARM64 |
+| H | `wasm32-unknown-unknown` | Bun 1.3 / JSC (WebKit) | x86_64 |
+| I | `wasm32-unknown-unknown` | Bun 1.3 / JSC (WebKit) | ARM64 |
 
 Every libm transcendental, `mul_add`, subnormal, rounding mode, saturating cast,
-and the sort reproduce byte-for-byte across x86_64 **and** ARM64, native **and**
-both WASM runtimes — the ARM×WASM quadrant included. Seed `0x0…0` →
+and the sort reproduce byte-for-byte across x86_64 **and** ARM64; native, both
+WASM runtimes, **and both browser engines** (V8 + JSC). Seed `0x0…0` →
 `5334a21cf46b7da4d20b5655c067301a8c30b016573e9264ddba39dc9428dcb8`.
 
 First green run: <https://github.com/creativeorc/leyline-poc0-determinism-gate/actions/runs/29673296970>.

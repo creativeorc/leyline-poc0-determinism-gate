@@ -54,6 +54,10 @@ jobs:
           - { cell: E, runner: ubuntu-24.04-arm, kind: wasmtime, target: wasm32-wasip1 }
           - { cell: F, runner: ubuntu-24.04,     kind: node,     target: wasm32-unknown-unknown }
           - { cell: G, runner: ubuntu-24.04-arm, kind: node,     target: wasm32-unknown-unknown }
+          # Bun runs JavaScriptCore (WebKit) — the iPad's WKWebView engine. Cell I
+          # (JSC on ARM64) is the closest proxy to the physical iPad ahead of POC 1.
+          - { cell: H, runner: ubuntu-24.04,     kind: bun,      target: wasm32-unknown-unknown }
+          - { cell: I, runner: ubuntu-24.04-arm, kind: bun,      target: wasm32-unknown-unknown }
     runs-on: ${{ matrix.runner }}
     env:
       CELL: ${{ matrix.cell }}
@@ -69,6 +73,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22.11.0"
+
+      - name: Setup Bun (cells H/I — JavaScriptCore)
+        if: matrix.kind == 'bun'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
 
       - name: Install wasmtime (cells D/E)
         if: matrix.kind == 'wasmtime'
@@ -99,6 +109,10 @@ jobs:
             node)
               cargo build --release -p gate-wasm --target ${{ matrix.target }}
               node harness/node/run.mjs --toolchain "$(rustc -V)" > raw.json
+              ;;
+            bun)
+              cargo build --release -p gate-wasm --target ${{ matrix.target }}
+              bun harness/node/run.mjs --toolchain "$(rustc -V)" > raw.json
               ;;
           esac
           python3 harness/ci/annotate.py < raw.json > hashes.json
@@ -133,11 +147,16 @@ jobs:
           set -euo pipefail
           files=$(find art -name hashes.json | sort)
           echo "cells under comparison:"; echo "$files"
+          # Derive the golden path from the CURRENT generator version, so a
+          # GENERATOR_VERSION bump automatically compares against goldens/v<N>.json
+          # (a stale hardcoded v0 would silently stop anchoring after a bump).
+          gen=$(python3 -c 'import json,glob; print(json.load(open(sorted(glob.glob("art/hashes-*/hashes.json"))[0]))["generator_version"])')
+          gfile="goldens/v${gen}.json"
           golden=""
-          if [ -f goldens/v0.json ]; then
-            golden="--golden goldens/v0.json"
+          if [ -f "$gfile" ]; then
+            golden="--golden $gfile"; echo "anchoring against $gfile"
           else
-            echo "no goldens/v0.json yet (minted via the ceremony in T8) — cross-cell only"
+            echo "no $gfile yet (mint via the ceremony) — cross-cell only"
           fi
           python3 harness/compare/compare.py hashes $golden $files
 

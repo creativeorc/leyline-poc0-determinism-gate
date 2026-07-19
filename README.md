@@ -47,8 +47,9 @@ Makefile          `make gate` local loop
 ## Status
 
 **POC 0 complete (T1–T9).** The gate proves bit-identical world generation across
-7 cells (x86_64 + ARM64, native + wasmtime + V8), is proven to go **red** on every
-violation class (F1–F5, AC5), and is anchored to a reproducibly-minted golden.
+9 cells (x86_64 + ARM64; native, wasmtime, V8, and **JSC via Bun** — the iPad's
+engine), is proven to go **red** on every violation class (F1–F5, AC5), and is
+anchored to a reproducibly-minted, version-aware golden.
 Acceptance sweep: [`docs/ACCEPTANCE.md`](docs/ACCEPTANCE.md). One admin step
 remains to make the gate *mechanically* block merges — [`SETUP.md`](SETUP.md).
 

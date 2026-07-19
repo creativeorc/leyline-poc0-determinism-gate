@@ -10,7 +10,7 @@ Key runs:
 
 | AC | Requirement | Status | Evidence |
 |---|---|---|---|
-| **AC1** | Cross-cell equality; 3-repeat in-process self-check per cell; two consecutive full-workflow runs | ✅ | `fan-in` reports `OK: 7 sources agree on all 10 seeds` (and `8 sources + golden` post-mint) across cells A–G, on every push to `main`. `run_all(3)` self-check runs in every cell. |
+| **AC1** | Cross-cell equality; 3-repeat in-process self-check per cell; two consecutive full-workflow runs | ✅ | `fan-in` reports all cells + golden agree on all 10 seeds across cells **A–I** (native x86_64/ARM64, wasmtime, V8, and **JSC via Bun** on x86_64+ARM64), on every push to `main`. `run_all(3)` self-check runs in every cell. |
 | **AC2** | Golden match with provenance; goldens minted only via the ceremony | ✅ | `goldens/v0.json` minted from cell A via `mint-goldens.yml` (commit `9955b20`), records `minted_from`/`toolchain`/`date`/`commit`. Main fan-in: `8 sources + golden agree`. |
 | **AC3** | F1–F4 turn the gate red; F1 divergence pattern recorded | ✅ | `red-path-f234` + `red-path-f1` (run 29673743586). F1 three-way divergence (glibc/Apple/wasm) recorded in `DETERMINISM.md`. |
 | **AC4** | Lints bite (F5); covenant crates clean under `-D warnings` | ✅ | `red-path-f5` green (inverted); `lint` job green. Q1: all bans resolve in clippy — no textual-scan fallback. |
@@ -33,6 +33,20 @@ All answered in `DETERMINISM.md`:
 - **Q6** zero-import wasm instantiation.
 - **Q7** `sha2` clean on both wasm targets.
 - **Q8** `mul_add` fused `0x3c90000000000000` ≠ unfused `0x0`, both globally consistent.
+
+## Post-POC hardening (beyond §12)
+
+Added after the AC sweep to close named gaps:
+
+- **JavaScriptCore covered.** Cells H/I run the wasm under Bun (JSC/WebKit) on
+  x86_64 + ARM64 — the iPad's WKWebView engine, formerly the biggest accepted
+  gap (§1). JSC digests match the fleet bit-for-bit.
+- **Re-mint enforcement tested.** `mint-check.sh` unit-verified: first-mint-of-a-
+  new-version ok, idempotent re-mint ok, changed-bytes-without-a-version-bump →
+  INCIDENT (exit 1).
+- **Version-aware anchoring.** The fan-in derives the golden path from the current
+  `generator_version` (`goldens/v<N>.json`), so a `GENERATOR_VERSION` bump keeps
+  anchoring instead of silently comparing a stale `v0`.
 
 ## Definition of done (§15)
 

@@ -73,12 +73,17 @@ for (const seed of SEEDS) {
   seeds[`0x${seed.toString(16).padStart(16, "0")}`] = hex;
 }
 
+// Same harness, two engines: Node runs V8; Bun runs JavaScriptCore (WebKit) —
+// the engine the iPad's WKWebView ships, so the Bun cell is our JSC proxy.
+const isBun = Boolean(versions.bun);
 const out = {
   generator_version: Number(generator_version()),
   target: "wasm32-unknown-unknown",
-  runtime: "node",
+  runtime: isBun ? "bun" : "node",
   toolchain,
-  runtime_version: `${version} v8 ${versions.v8}`,
+  runtime_version: isBun
+    ? `bun ${versions.bun} jsc ${versions.webkit ?? "?"}`
+    : `node ${version} v8 ${versions.v8}`,
   host_arch: arch,
   repeats: 3,
   seeds,

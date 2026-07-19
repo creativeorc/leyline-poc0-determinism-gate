@@ -30,8 +30,11 @@ else
   echo "cell D (wasmtime): SKIPPED (wasmtime not on PATH)"
 fi
 
+# Anchor against the golden for the CURRENT generator version, if minted.
+gen=$(python3 -c 'import json;print(json.load(open("'"$out"'/A.json"))["generator_version"])')
+gfile="goldens/v${gen}.json"
 golden=""
-[ -f goldens/v0.json ] && golden="--golden goldens/v0.json"
+[ -f "$gfile" ] && golden="--golden $gfile"
 
 echo
 python3 harness/compare/compare.py hashes $golden "$out"/*.json

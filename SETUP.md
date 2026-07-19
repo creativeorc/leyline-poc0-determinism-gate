@@ -26,6 +26,8 @@ to `main`), so it's your call to flip.
     - `cell E (wasm32-wasip1 / wasmtime)`
     - `cell F (wasm32-unknown-unknown / node)`
     - `cell G (wasm32-unknown-unknown / node)`
+    - `cell H (wasm32-unknown-unknown / bun)`
+    - `cell I (wasm32-unknown-unknown / bun)`
     - `fan-in (all cells must agree)`
     - `red-path F2/F3/F4 (self-check, drift, R6 panic)`
     - `red-path F1 (platform-libm leak must diverge)`
@@ -50,6 +52,8 @@ gh api -X PUT repos/creativeorc/leyline-poc0-determinism-gate/branches/main/prot
       {"context": "cell E (wasm32-wasip1 / wasmtime)"},
       {"context": "cell F (wasm32-unknown-unknown / node)"},
       {"context": "cell G (wasm32-unknown-unknown / node)"},
+      {"context": "cell H (wasm32-unknown-unknown / bun)"},
+      {"context": "cell I (wasm32-unknown-unknown / bun)"},
       {"context": "fan-in (all cells must agree)"},
       {"context": "red-path F2/F3/F4 (self-check, drift, R6 panic)"},
       {"context": "red-path F1 (platform-libm leak must diverge)"},
