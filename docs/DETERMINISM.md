@@ -167,11 +167,11 @@ Filled in as the corresponding task lands; until then, status is *open*.
 | Q1 | Does clippy resolve bans on primitive inherent methods (`f64::sin`) and bare `f32`? | **answered (T4): YES, all of them.** Fixture F5 shows clippy 1.93 flags `f64::sin` + `std::time::Instant::now` (`disallowed_methods`), bare `f32` + `std::collections::HashMap` (`disallowed_types`), and integer `+` (`arithmetic_side_effects`). **No textual-scan fallback is needed.** |
 | Q2 | `wasm32-wasip1` vs `wasip2`? | **answered (T5): wasip1.** `gate-cli` builds to `wasm32-wasip1` and runs under wasmtime 46.0.1 (`wasmtime run <wasm> --json`; no `--` separator — wasmtime forwards guest args directly). Digests match native bit-for-bit, so the choice does not affect numerics. |
 | Q3 | ARM runner availability? | **answered:** standalone public repo → free ARM Linux runners; cells B/E/G run as specified (`ubuntu-24.04-arm`), no fallback. |
-| Q4 | Toolchain pin. | **rustc 1.93.1** pinned in `rust-toolchain.toml`. wasmtime + Node pins recorded in CI at T6. |
+| Q4 | Toolchain pin. | **answered:** rustc **1.93.1** (`rust-toolchain.toml`), wasmtime **46.0.1**, Node **22.11.0** — pinned in `gate.yml`; each `hashes.json` records the actual runtime version too. |
 | Q5 | Debug/release parity. | **answered (T3):** `gate-cli --json` produces byte-identical seed digests in debug and release on cell A (x86_64-linux, rustc 1.93.1). R5 holds by construction; release-only is normative henceforth. |
 | Q6 | Zero-import instantiation of the std cdylib? | **answered (T5): YES.** `WebAssembly.Module.imports(gate_wasm.wasm)` is `[]`; `run.mjs` instantiates with `{}`. Exports: `memory, alloc, run_gate, generator_version, seed_count`. No panic/abort shim surfaced — no stub needed. |
 | Q7 | `sha2` on wasm? | **answered (T5): YES.** `sha2` builds warning-free for both `wasm32-wasip1` and `wasm32-unknown-unknown` with default features; digests match native. No feature trimming needed. |
-| Q8 | `mul_add` lowering (fused ≠ unfused, both globally consistent)? | **open** — W6 probe 3 records observed bit patterns across all cells (T2/T6). |
+| Q8 | `mul_add` lowering (fused ≠ unfused, both globally consistent)? | **answered (T9):** `0.1.mul_add(10.0, -1.0)` = `0x3c90000000000000` (5.55e-17, fused); `0.1*10.0 - 1.0` = `0x0000000000000000` (0.0, unfused). They differ, and both are identical across all 7 cells (the fan-in agrees on the full transcript). `mul_add` is a correctly-rounded fused op everywhere — safe to use. |
 
 ---
 

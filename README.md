@@ -46,7 +46,13 @@ Makefile          `make gate` local loop
 
 ## Status
 
-**T1–T3 complete** (native gate works end to end):
+**POC 0 complete (T1–T9).** The gate proves bit-identical world generation across
+7 cells (x86_64 + ARM64, native + wasmtime + V8), is proven to go **red** on every
+violation class (F1–F5, AC5), and is anchored to a reproducibly-minted golden.
+Acceptance sweep: [`docs/ACCEPTANCE.md`](docs/ACCEPTANCE.md). One admin step
+remains to make the gate *mechanically* block merges — [`SETUP.md`](SETUP.md).
+
+**T1–T3** (native gate works end to end):
 - **T1** skeleton — workspace, toolchain pin, covenant lints, crate homes, docs.
 - **T2** kernel — SplitMix64 (KATs vs an independent oracle), workloads W1–W6,
   canonical transcript writer with R6 finiteness asserts.
@@ -74,11 +80,11 @@ Makefile          `make gate` local loop
 - **T8** golden ceremony + guard — `mint-goldens.yml` (workflow_dispatch, cell A,
   provenance, opens a mint PR), `golden-guard` job blocks out-of-ceremony golden
   changes (AC5 demonstrated in CI), CODEOWNERS on `goldens/`. First `goldens/v0.json`
-  minted via the ceremony (pending approval).
+  minted via the ceremony and merged; the main fan-in now compares `--golden` too.
+- **T9** handoff — [`SETUP.md`](SETUP.md) (branch-protection checklist),
+  [`docs/ACCEPTANCE.md`](docs/ACCEPTANCE.md) (AC1–AC11 sweep). Q4/Q5/Q8 recorded.
 
 Try it: `make gate`, `make f5`, `make red-paths`.
-Next: **T9** — SETUP.md (branch-protection checklist) + AC1–AC11 sweep + handoff.
-See spec §13 for the T1→T9 sequence.
 
 ## Quick start
 
