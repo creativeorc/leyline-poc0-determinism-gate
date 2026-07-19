@@ -7,15 +7,16 @@
 //! hashed workload probes — a prose-only rule is a rule we don't actually have
 //! (OR5).
 //!
-//! ## Square-0 status (T1)
+//! ## Style forced by the covenant
 //!
-//! This is the T1 skeleton: the crate, the covenant lints, and the module homes
-//! exist and compile clean. The actual SplitMix64 PRNG, workloads W1–W6, and the
-//! canonical transcript writer land in **T2** (see `docs/POC0-SPEC.md` §5, §13).
+//! `clippy::arithmetic_side_effects` (denied below) fires on **integer**
+//! `+ - * /` — but not on float arithmetic, `% <constant>`, or shifts. So:
+//! float math is written naturally (R3), the PRNG uses `wrapping_*` (intentional
+//! wrapping, R5), and coordinate/index math uses `checked_*().expect(..)` so an
+//! *unintended* overflow panics → nonzero exit → red cell (R5 + release
+//! `overflow-checks`).
 
-// R5 made mechanical: any arithmetic that could overflow must be explicit
-// (`wrapping_*` / `checked_*`). Combined with release `overflow-checks = true`,
-// this gives debug/release parity by construction.
+// R5 made mechanical (see module docs).
 #![deny(clippy::arithmetic_side_effects)]
 #![forbid(unsafe_code)]
 
@@ -24,23 +25,10 @@
 /// definitionally an incident, not a fix (see the mint ceremony).
 pub const GENERATOR_VERSION: u32 = 0;
 
-/// SplitMix64 PRNG + substream key derivation (§5.2). Known-answer tests are
-/// cross-checked against an independent oracle before they are trusted.
-pub mod prng {
-    // TODO(T2): SplitMix64 `next`/`mix`, `key(..)`, uniform-f64 constructors,
-    // and KATs with provenance.
-}
+pub mod prng;
+pub mod transcript;
+pub mod workload;
 
-/// Workloads W1–W6 (§5.3–5.4): one representative of every operation class the
-/// real generator will use. Representative, not useful — do not "improve" it.
-pub mod workload {
-    // TODO(T2): W1 arithmetic chain, W2 transcendental field, W3 feature
-    // placement, W4 sort/selection, W5 reduction, W6 edge probes.
-}
-
-/// Canonical transcript serialization (§5.6). Little-endian fixed-width ints,
-/// `f64::to_bits()` as u64 LE, u64 LE length prefixes, no padding, no text.
-/// Asserts `is_finite()` before every float write (R6).
-pub mod transcript {
-    // TODO(T2): section tags, header, and the finiteness-asserting writer.
-}
+/// Run the full workload for one seed and return its canonical transcript bytes
+/// (§5.6). `gate-runner` SHA-256s exactly these bytes.
+pub use workload::run;
