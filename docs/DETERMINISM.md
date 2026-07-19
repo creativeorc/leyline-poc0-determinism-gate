@@ -132,7 +132,7 @@ Filled in as the corresponding task lands; until then, status is *open*.
 
 | Q | Question | Status / Answer |
 |---|----------|-----------------|
-| Q1 | Does clippy resolve bans on primitive inherent methods (`f64::sin`) and bare `f32`? | **open** — answered empirically by fixture F5 (T4). Whatever clippy can't express falls back to a CI textual scan, documented here. |
+| Q1 | Does clippy resolve bans on primitive inherent methods (`f64::sin`) and bare `f32`? | **answered (T4): YES, all of them.** Fixture F5 shows clippy 1.93 flags `f64::sin` + `std::time::Instant::now` (`disallowed_methods`), bare `f32` + `std::collections::HashMap` (`disallowed_types`), and integer `+` (`arithmetic_side_effects`). **No textual-scan fallback is needed.** |
 | Q2 | `wasm32-wasip1` vs `wasip2`? | **provisional: wasip1** (simplest module story under wasmtime). Re-verify against current rustc/wasmtime at T5; must not affect numerics. |
 | Q3 | ARM runner availability? | **answered:** standalone public repo → free ARM Linux runners; cells B/E/G run as specified (`ubuntu-24.04-arm`), no fallback. |
 | Q4 | Toolchain pin. | **rustc 1.93.1** pinned in `rust-toolchain.toml`. wasmtime + Node pins recorded in CI at T6. |
@@ -145,7 +145,13 @@ Filled in as the corresponding task lands; until then, status is *open*.
 
 ## What this gate has been shown to catch
 
-Populated in T7 with links to the inverted CI runs demonstrating each red path
-(F1 platform-libm leak, F2 iteration-order entropy, F3 silent drift, F4 domain
-escape, F5 lint enforcement), including F1's observed cross-target divergence
-pattern. *(Empty until the red-path fixtures land.)*
+Populated as each inverted path lands; CI run links added in T7.
+
+- **F5 — lint enforcement (T4, proven locally).** `fixtures/f5-lint/` uses each
+  banned construct; `fixtures/f5-lint/expect-red.sh` asserts `cargo clippy
+  -- -D warnings` fails *and* reports every one. All five are caught by clippy
+  (see Q1). The fixture is excluded from the workspace so it never touches the
+  real lint job (OR2). CI wires this as an inverted job in T7.
+- **F1–F4 (runtime red paths):** land in T7 — platform-libm leak, iteration-order
+  entropy, silent drift, domain escape — including F1's observed cross-target
+  divergence pattern.

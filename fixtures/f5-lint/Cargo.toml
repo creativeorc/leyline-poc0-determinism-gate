@@ -1,0 +1,12 @@
+# F5 — lint-enforcement red-path fixture (§8). Standalone package, EXCLUDED from
+# the workspace (../../Cargo.toml) so its deliberate covenant violations never
+# touch the real lint job. It still sits under the repo root, so it inherits the
+# covenant clippy.toml and the pinned toolchain. Never linked into the real gate.
+[package]
+name = "f5-lint"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["rlib"]

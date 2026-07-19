@@ -1,5 +1,9 @@
 # Build
 /target
+# Fixtures are standalone packages (excluded from the workspace); ignore their
+# build output and lockfiles (no deps -> nothing to pin).
+fixtures/*/target/
+fixtures/*/Cargo.lock
 
 # Transcript diagnostic dumps (raw bytes are for local diagnosis, not committed)
 /gate-out/

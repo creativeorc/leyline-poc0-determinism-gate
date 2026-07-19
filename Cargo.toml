@@ -5,6 +5,10 @@
 [workspace]
 resolver = "3"
 members = ["crates/*"]
+# Red-path fixtures (§8) deliberately violate the covenant, so they must stay out
+# of the real workspace/lint job. They still sit under the repo root, so they
+# inherit this repo's clippy.toml and toolchain pin — which is the point.
+exclude = ["fixtures"]
 
 [workspace.package]
 edition = "2024"

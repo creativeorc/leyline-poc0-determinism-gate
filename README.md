@@ -53,10 +53,13 @@ Makefile          `make gate` local loop
 - **T3** native harness — `gate-runner` SHA-256 digests + 3-repeat self-check;
   `gate-cli --json` / `--transcript-out`. Q5 debug/release byte-parity confirmed;
   gate SHA-256 cross-checks against coreutils `sha256sum`.
+- **T4** lint wall proven — fixture `fixtures/f5-lint/` + `expect-red.sh` show
+  clippy rejects every banned construct. **Q1 answered: all bans resolve in
+  clippy 1.93 (no textual-scan fallback).**
 
-Try it: `make run` (native per-seed digests as JSON).
-Next: **T4** — covenant lints proven by fixture F5 (Q1); then **T5** WASM cells.
-See spec §13 for the T1→T9 sequence.
+Try it: `make run` (native digests as JSON), `make f5` (prove the lint wall bites).
+Next: **T5** — the WASM cells (wasmtime + Node/V8), first cross-target compare
+(Q2/Q6/Q7). See spec §13 for the T1→T9 sequence.
 
 ## Quick start
 
